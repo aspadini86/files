@@ -189,8 +189,8 @@
 		RMAN> run {
 					shutdown immediate;
 					startup mount;
-					restore database until time "to_date('18-OCT-2019 10:02:16','DD-MON-YYYY HH24:MI:SS')";
-					recover database until time "to_date('18-OCT-2019 10:02:16','DD-MON-YYYY HH24:MI:SS')";
+					restore database until time "to_date('17-MAR-2021 20:11:00','DD-MON-YYYY HH24:MI:SS')";
+					recover database until time "to_date('17-MAR-2021 20:11:00','DD-MON-YYYY HH24:MI:SS')";
 					alter database open resetlogs;
 					}
 
@@ -198,7 +198,7 @@
 		RMAN> run {
 					shutdown immediate;
 					startup mount;
-					set until time "to_date('18-OCT-2019 10:02:16','DD-MON-YYYY HH24:MI:SS')";
+					set until time "to_date('17-MAR-2021 20:11:00','DD-MON-YYYY HH24:MI:SS')";
 					restore database;
 					recover database;
 					alter database open resetlogs;
