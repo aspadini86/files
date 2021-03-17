@@ -146,7 +146,7 @@
 		SYS@orcl > select CURRENT_SCN from v$database;
 			CURRENT_SCN
 			-----------
-				2056116
+				17360345
 
 		-- Relizando um drop.
 		SYS@orcl > delete from t1;
@@ -155,8 +155,8 @@
 		-- Relizando Incomplete Restore
 		RMAN> shutdown immediate;
 		RMAN> startup mount;
-		RMAN> restore database until scn 2056116;
-		RMAN> recover database until scn 2056116;
+		RMAN> restore database until scn 17360345;
+		RMAN> recover database until scn 17360345;
 		RMAN> alter database open resetlogs;
 
 		-- OR
