@@ -1,0 +1,87 @@
+#################################################################################
+## Comandos relacionados às informações
+#################################################################################
+## exibe a versão do docker que está instalada.
+$ docker version
+
+## retorna diversas informações sobre o container.
+$ docker inspect 9bf30172b205
+
+## exibe todos os containers em execução no momento.
+$ docker ps 
+
+## exibe todos os containers 
+$ docker ps -a 
+
+## exibe todos os containers 
+$ docker ps -a 
+
+#################################################################################
+## Comandos relacionados à execução 
+#################################################################################
+## cria um container com a respectiva imagem passada como parâmetro.
+$ docker run ubuntu
+
+## cria um container e conecta o terminal que estamos utilizando com o 
+## do container.
+## como a imagem do ubuntu não nenhum programa, ele executa e finaliza. 
+$ docker run -it ubuntu 
+
+## ao executar, dá um nome ao container e define uma porta aleatória.
+## a opção -d, faz um detach, assim o seu terminal não fica preso ao docker 
+$ docker run -d -P --name NOME dockersamples/static-site
+
+##  define uma porta específica para ser atribuída à porta 80 do container, neste caso 12345.
+$ docker run -d -p 12345:80 dockersamples/static-site
+
+## cria um volume no respectivo caminho do container
+## opção -w, signigica que o container já iniciara no /var/www, e não no / como é o default 
+$ docker run -p 8080:3000 -v "/docker/volume-exemplo:/var/www" -w "/var/www" node npm start
+
+#################################################################################
+## Comandos relacionados à Network
+#################################################################################
+## Criando uma nova network, na network default ele não resolve nome automaticamente
+## somente se vc ciar uma nova network 
+$ docker network create --driver bridge minha-rede 
+
+## Exibindo as netowkr no docker 
+$ docker network ls 
+
+## criando um container e associando e essa network 
+$ docker run -it --name meu-ubuntu --network minha-rede ubuntu 
+
+## Exibindo as portas de um container 
+$ docker ports c6c02929948b
+
+#################################################################################
+## Comandos relacionados à Inicialização/interrupção 
+#################################################################################
+##  inicia o container com id em questão
+$ docker start c6c02929948b
+
+## inicia o container com id em questão e integra os terminais, além de permitir 
+## interação entre ambos.
+$ docker start -a -i c6c02929948b
+
+##  interrompe o container com id em questão, porem pode esperar até 10m 
+$ docker stop c6c02929948b
+
+## interrompe o container com 0s 
+$ docker stop -t 0 c6c02929948b
+
+#################################################################################
+## Comandos relacionados à removação 
+#################################################################################
+
+## removendo um container 
+$ docker rm 
+
+## removendo uma imagem 
+$ docker rmi 
+
+##  remove todos os containers que estão parados. 
+$ docker container prune 
+
+## removendo todos os containers em execução 
+$ docker rm $(docker ps -q)
