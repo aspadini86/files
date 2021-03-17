@@ -72,3 +72,5 @@ EOF
 #
 # LIMPANDO LOGS MAIOES QUE 7 DIAS
 find $DIRBKP -type f -name bkprman_* -ctime +6 -exec rm -f {} \;
+
+# teste
