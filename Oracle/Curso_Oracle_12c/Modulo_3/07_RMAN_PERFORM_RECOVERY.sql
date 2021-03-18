@@ -242,15 +242,19 @@
 	-- Relizando mais alterações na tabela t3
 	RMAN> exit;
 	[oracle@bd01 ~]$ sqlplus  / as sysdba
+	SYS@orcl > select to_char(sysdate,'DD-MON-YYYY HH24:MI:SS') hora from dual;
+				17-MAR-2021 20:33:46
+
 	SYS@orcl > truncate table t3;
 
 	-- Fazendo restore.
 	RMAN> run {
 				shutdown immediate;
 	 			startup mount;
+				set until time "to_date('17-MAR-2021 20:33:46','DD-MON-YYYY HH24:MI:SS')";
 	 			restore database;
  				recover database;
-	 			alter database open;
+	 			alter database open resetlogs;
 		}
 
 	-- Por segurança vamos fazer um novo backup
@@ -261,13 +265,14 @@
 ------------------------------------------------------------------------
 	-- Realizando backup as copy
 	$ mkdir -p /u02/fra/ORCL/datafile
-	RMAN> backup as copy tablespace users format '/u02/fra/ORCL/datafile/USERS_01.dbf';
+	RMAN> backup as copy datafile 64 format '/u02/fra/ORCL/datafile/totvs_01.dbf';
 
 	--USANDO SIWTCH PARA RECUPERAR
-	SQL> alter tablespace users offline immediate; 
-	RMAN> switch tablespace USERS  to copy;
-	RMAN> recover tablespace USERS;
-	rman> alter tablespace users online;
+	RMAN> alter database datafile 64 offline;
+	RMAN> switch datafile 64  to copy;
+	RMAN> recover datafile 64;
+	RMAN> alter database datafile 64 online;
+
 
 	-- Verificar a localização da tablespace users
 	RMAN> report schema;
@@ -287,13 +292,13 @@
 	-- Voltando a localização anterior.
 	-- Realizando backup as copy
 	$ rm -f /u01/oracle/oradata/ORCL/user01.dbf
-	RMAN> backup as copy tablespace users format '/u01/oracle/oradata/ORCL/user01.dbf';
+	RMAN> backup as copy tablespace totvs format '/u01/oracle/oradata/ORCL/totvs_01.dbf';
 
 	--USANDO SIWTCH PARA RECUPERAR
-	SQL> alter tablespace users offline immediate; 
-	RMAN> switch tablespace USERS  to copy;
-	RMAN> recover tablespace USERS;
-	rman> alter tablespace users online;
+	SQL> alter tablespace totvs offline immediate; 
+	RMAN> switch tablespace totvs  to copy;
+	RMAN> recover tablespace totvs;
+	rman> alter tablespace totvs online;
 
 	-- Por segurança vamos fazer um novo backup
 	RMAN> backup as compressed backupset database plus archivelog delete input;
@@ -314,12 +319,12 @@
 
 	-- voltando localização original
 	RMAN>  run {
-		sql "alter tablespace users offline immediate";
-		set newname for datafile '/u01/oracle/oradata/orcl/user01.dbf' to '/u02/fra/users01.dbf';
-		restore tablespace users;
+		sql "alter tablespace totvs offline immediate";
+		set newname for datafile '/u01/oracle/oradata/ORCL/totvs_01.dbf' to '/u02/fra/ORCL/datafile/USERS_01.dbf';
+		restore tablespace totvs;
 		switch datafile all;
-		recover tablespace users;
-		sql "alter tablespace users online";
+		recover tablespace totvs;
+		sql "alter tablespace totvs online";
 	}
 
 	-- Por segurança vamos fazer um novo backup
@@ -327,13 +332,13 @@
 	RMAN> delete noprompt obsolete;
 
 	-- Voltando localização original
-	RMAN>  run {
-		sql "alter tablespace users offline immediate";
-		set newname for datafile '/u02/fra/users01.dbf' to '/u01/oracle/oradata/orcl/user01.dbf';
-		restore tablespace users;
+	RMAN>   run {
+		sql "alter tablespace totvs offline immediate";
+		set newname for datafile '/u02/fra/ORCL/datafile/USERS_01.dbf' to '/u01/oracle/oradata/ORCL/totvs_01.dbf';
+		restore tablespace totvs;
 		switch datafile all;
-		recover tablespace users;
-		sql "alter tablespace users online";
+		recover tablespace totvs;
+		sql "alter tablespace totvs online";
 	}
 
 
