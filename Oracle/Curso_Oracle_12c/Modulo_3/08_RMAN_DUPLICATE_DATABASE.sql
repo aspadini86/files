@@ -29,6 +29,7 @@
 	CONTROL_FILES=(/u01/oracle/oradata/TESTE/control01.ctl,/u01/oracle/oradata/TESTE/control02.ctl)
 	DB_FILE_NAME_CONVERT=(/u01/oracle/oradata/ORCL/,/u01/oracle/oradata/TESTE/)
 	LOG_FILE_NAME_CONVERT=(/u01/oracle/oradata/ORCL/,/u01/oracle/oradata/TESTE/)
+	ENABLE_PLUGGABLE_DATABASE=TRUE
 	COMPATIBLE=19.0.0.0.0
 
 
