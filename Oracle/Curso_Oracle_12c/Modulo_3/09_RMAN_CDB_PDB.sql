@@ -10,7 +10,7 @@
 
 	-- Exportando variable
 		[oracle@bd01 ~]$ . oraenv
-		ORACLE_SID = [ORCL] ? ORCL2
+		ORACLE_SID = [ORCL] ? ORCL
 
 		[oracle@bd01 ~]$ sqlplus  / as sysdba
 		SYS@ORCL2> startup mount

@@ -29,56 +29,48 @@
 -------------------------------------------------------------------------------------
 -- Host Destino
 -------------------------------------------------------------------------------------
-	-- Enviar o backup para o Novo servidor.
-	[oracle@bd01 ~]$ rsync -ravzp --progress -e "ssh -p 2200" [ip_servidor_origem]:/u01/fra/ORCL2 /u01/fra
+	-- Puxando para o servidor de backup
+	[oracle@bd01 ~]$ rsync -ravzp --progress -e "ssh -p 22" [ip_servidor_origem]:/u01/fra/ORCL2 /u01/fra
 
+	-- Enviar o backup para o Novo servidor.
+	[oracle@bd01 ~]$ rsync -ravzp --progress -e "ssh -p 22" /u01/fra 152.67.62.102:/u01
 
 	-- Configure as variaveis de ambiente
-	$ export ORACLE_SID=ORCL2
+	$ export ORACLE_SID=ORCL
+
+	-- Restaurando SPFILE 
+	$  scp /u01/oracle/product/19.0.0/dbhome_1/dbs/spfileORCL.ora 152.67.62.102:/u01/oracle/product/19.0.0/dbhome_1/dbs/spfileORCL.ora
 
 	-- Conecte-se ao novo banco de dados de destino com NOCATALOG
 	$ rman target /
 
 	-- Defina o DBID
-    RMAN> set dbid 1003278535
+    RMAN> set dbid 1578698545
 
 	-- Inicialize a instancia em modo NOMOUNT
-    RMAN> startup nomount
-
-	-- Restaura o SPFILE
-	RMAN> restore spfile from '/u01/fra/ORCL2/backupset/SPFILE_ORCL2_1003278535_7_20191024.bkp';
-	RMAN> shutdown immediate;
-	RMAN> startup nomount;
-
-		connected to target database (not started)
-		RMAN-00571: ===========================================================
-		RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
-		RMAN-00571: ===========================================================
-		RMAN-03002: failure of startup command at 10/19/2018 11:40:31
-		RMAN-04014: startup failed: ORA-16032: parameter LOG_ARCHIVE_DEST_2 destination string cannot be translated
-		ORA-07286: sksagdi: cannot obtain device information.
-		Linux-x86_64 Error: 2: No such file or directory
-
+   
 	-- Gerou o erro acima, pq não temos os diretorios criados
 	-- Verificando e criando os diretorios
-	[oracle@bd01 ~]$ cat /u02/fra/ORCL/backupset/SPFILE_ORCL2_1003278535_7_20191024.bkp
-	[oracle@bd01 ~]$ mkdir -p /u01/oracle/admin/ORCL2/adump  /u01/oracle/oradata/ORCL2/
-	[oracle@bd01 ~]$ chown oracle:oinstall /u01/oracle/admin/ORCL2/adump  /u01/oracle/oradata/ORCL2/
-	[oracle@bd01 ~]$ exit
+	$ strings /u01/oracle/product/19.0.0/dbhome_1/dbs/spfileORCL.oramkdir 
+	$ mkdir -p /u01/oracle/admin/ORCL/adump
+	$ mkdir -p /u01/oracle/oradata/ORCL/
+	$ mkdir -p /u01/fra/ORCL/
+	$ mkdir -p /u02/fra
+	$ mkdir -p /u02/ORCL/arc
 
 	-- Tentar subir novamente
 	[oracle@bd01 ~]$ rman target /
-	RMAN> set dbid 1003278535
+	RMAN> set dbid 1578698545
 	RMAN> startup nomount;
 
 	-- Resturar o CONTROLFILE
-	RMAN> RESTORE CONTROLFILE FROM '/u01/fra/ORCL2/backupset/CONTROLFILE_ORCL2_1003278535_6_20191024_1.bkp';
+	RMAN> RESTORE CONTROLFILE FROM '/u01/fra/ORCL/backupset/CONTROLFILE_ORCL_1578698545_91_20210324_1.bkp';
 
 	-- Alterando a instancia para o modo mount;
 	RMAN> alter database mount;
 
 	-- Catalogando backup
-	RMAN> catalog start with '/u01/fra/ORCL2/backupset';
+	RMAN> catalog start with '/u01/fra/ORCL/backupset';
 
 	-- Realizando o restor database;
 	RMAN> restore database;
@@ -89,11 +81,18 @@
 	-- RMAN-06054: media recovery requesting unknown archived log for thread 1 with sequence 3 and starting SCN of 187685
 	-- RMAN> recover database noredo;
 
+	-- Sincronizandos os backups diferenciais
+	$ rsync -ravzp --progress -e "ssh -p 22" /u02/ORCL/arc 152.67.62.102:/u02/ORCL
+
+	-- Catalogando backup
+	RMAN> catalog start with '/u02/ORCL/arc';
+	RMAN> recover database;
+
 	-- Open database resetlogs;
 	RMAN> alter database open resetlogs;
 
-	-- Restore realizado com sucesso!!!!
-	RMAN> shutdown immediate;
+	-- Validando base de dados 
+	RMAN> validate database; 
 
 ---------------------------------------------------------------------------
 --Transporting Tablespaces to a Different Platform Using RMAN Backupsets
@@ -111,20 +110,10 @@
 	-- Inserindo dados nessa tablespace
 	SYS@orcl > CREATE TABLE t1_tbs TABLESPACE teste AS SELECT * FROM all_objects;
 
-	-- Atualizando statistics do Oracle
-	SYS@orcl > ALTER SYSTEM SET RESOURCE_MANAGER_PLAN = default_plan;
-	SYS@orcl > exit;
-
 	-- Backup servidor de origem
 	RMAN> alter tablespace teste read only;
 
-	RMAN> backup to platform 'Linux x86 64-bit'
-		format '/u01/fra/TRANSPORT_%u.rman' datapump
-		format '/u01/fra/TRANSPORT_%u.dmp'
-		tablespace 'TESTE';
-
-	RMAN> shutdown immediate;
-	RMAN> exit;
+	RMAN> backup to platform 'Linux x86 64-bit' format '/u01/fra/TRANSPORT_%u.rman' datapump format '/u01/fra/TRANSPORT_%u.dmp' tablespace 'TESTE';
 
 ---------------------------------------------------------------------------
 -- Host de destino
@@ -132,22 +121,10 @@
 	-------------------------------------------------------------------------
 	-- Acertando characterset, pq na ORCL2 está diferente.
 	-------------------------------------------------------------------------
-	[oracle@bd01 ]$ export ORACLE_SID=ORCL2
-	[oracle@bd01 ]$ sqlplus / as sysdba
-	SYS@ORCL2 > select * from v$nls_parameters where parameter in ('NLS_CHARACTERSET');
+	-- envia arquivos 
+	$ scp /u01/fra/TRANSPORT_* 152.67.62.102:/u01/fra/
 
-	PARAMETER                                                        VALUE                                                                CON_ID
-	---------------------------------------------------------------- ---------------------------------------------------------------- ----------
-	NLS_CHARACTERSET                                                 AL32UTF8                                                                  1
-
-	SYS@ORCL2 >	shutdown immediate;
-	SYS@ORCL2 > startup restrict;
-	SYS@ORCL2 > alter database character set INTERNAL_USE WE8ISO8859P1;
-	SYS@ORCL2 >	shutdown immediate;
-	SYS@ORCL2 > startup;
-	SYS@ORCL2 > exit;
-
-	[oracle@bd01 ]$ cd /u01/fra ; ls -l
+		[oracle@bd01 ]$ cd /u01/fra ; ls -l
 	total 11568
 	drwxr-xr-x 3 oracle oinstall       24 Oct 17 20:43 ORCL
 	drwxr-x--- 5 oracle oinstall       59 Oct 24 14:07 ORCL2
@@ -157,6 +134,6 @@
 	[oracle@bd01 ]$ export ORACLE_SID=ORCL2
   [oracle@bd01 ]$ rman target /
 	RMAN> restore foreign tablespace 'TESTE'
-	format '/u01/oracle/oradata/ORCL2/teste.dbf'
-	from backupset '/u01/fra/TRANSPORT_24uf4ggi.rman'
-	dump file from backupset '/u01/fra/TRANSPORT_25uf4ggj.dmp';
+	format '/u01/oracle/oradata/ORCL/teste.dbf'
+	from backupset '/u01/fra/TRANSPORT_2vvqic7m.rman'
+	dump file from backupset '/u01/fra/TRANSPORT_30vqic7o.dmp';

@@ -13,7 +13,11 @@
 	RMAN> backup as compressed backupset database;
 
 -- 3. Configurando o arquivo de senhas do instância TESTE
-	[oracle@bd01 ~]$ orapwd file=$ORACLE_HOME/dbs/orapwTESTE password=P@$$word entries=10
+-- A senha de system / sys das duas instâncias precisam ser a mesma
+	[oracle@bd01 ~]$ rm -f $ORACLE_HOME/dbs/orapwORCL
+	[oracle@bd01 ~]$ orapwd file=$ORACLE_HOME/dbs/orapwORCL password=password format=12 entries=10 force=y
+	[oracle@bd01 ~]$ orapwd file=$ORACLE_HOME/dbs/orapwTESTE password=password format=12 entries=10 force=y
+
 
 	-- Reiniciar o serviço de listener
 	[oracle@bd01 ~]$  lsnrctl start
@@ -38,18 +42,12 @@
 	SYS@teste > startup nomount pfile='$ORACLE_HOME/dbs/initTESTE.ora';
 	SYS@teste > exit;
 
--- 9. Alterar a instancia ORCL para o estado de MOUNT
-	-- Até o oracle 11.2.0.4, a instancia precisara estar como mount
-	[oracle@bd01 ~]$ export ORACLE_SID=ORCL
-	[oracle@bd01 ~]$ sqlplus / as sysdba
-	SYS@orcl > alter user sys identified by password;
-
--- 10. Duplicante a instância ORCL na instância TESTE
+-- 9. Duplicante a instância ORCL na instância TESTE
 	[oracle@bd01 ~]$ export ORACLE_SID=TESTE
 	[oracle@bd01 admin]$ rman target sys/password@ORCL auxiliary /
 
--- 11. Duplicate database
-	RMAN> duplicate target database to teste;
+-- 10. Duplicate database
+	RMAN> duplicate target database to TESTE;
 	RMAN> exit;
 
 
