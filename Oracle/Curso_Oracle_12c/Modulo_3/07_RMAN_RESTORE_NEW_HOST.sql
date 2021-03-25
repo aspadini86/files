@@ -12,12 +12,15 @@
 	----------
 	1578698545
 
-
+	-- Force logging 
+	SYS@orcl > alter database force logging;
 	-- Gerar um novo backup
 	[oracle@bd01 ~]$ rman target /
 	RMAN> delete noprompt backupset;
 
 	RMAN> delete noprompt obsolete;
+
+	RMAN> delete noprompt archivelog all;
 
 	RMAN> backup as compressed
 		backupset database format '/u01/fra/%d/backupset/BKP_%d_%I_%s_%T_%p.bkp'
@@ -113,7 +116,9 @@
 	-- Backup servidor de origem
 	RMAN> alter tablespace teste read only;
 
-	RMAN> backup to platform 'Linux x86 64-bit' format '/u01/fra/TRANSPORT_%u.rman' datapump format '/u01/fra/TRANSPORT_%u.dmp' tablespace 'TESTE';
+	RMAN> backup to platform 'Linux x86 64-bit' 
+	format '/u01/fra/TRANSPORT_%u.rman' 
+	datapump format '/u01/fra/TRANSPORT_%u.dmp' tablespace 'SENAC_TESTE';
 
 ---------------------------------------------------------------------------
 -- Host de destino
@@ -133,7 +138,7 @@
 
 	[oracle@bd01 ]$ export ORACLE_SID=ORCL2
   [oracle@bd01 ]$ rman target /
-	RMAN> restore foreign tablespace 'TESTE'
+	RMAN> restore foreign tablespace 'SENAC_TESTE'
 	format '/u01/oracle/oradata/ORCL/teste.dbf'
 	from backupset '/u01/fra/TRANSPORT_2vvqic7m.rman'
 	dump file from backupset '/u01/fra/TRANSPORT_30vqic7o.dmp';
